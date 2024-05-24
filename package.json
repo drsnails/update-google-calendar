@@ -1,0 +1,16 @@
+{
+  "name": "update-google-calendar",
+  "version": "1.0.0",
+  "description": "takes a google sheet and update the calendar based on it",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stav Yaar Bar",
+  "license": "ISC",
+  "dependencies": {
+    "google-auth-library": "^9.10.0",
+    "googleapis": "^137.1.0"
+  }
+}
