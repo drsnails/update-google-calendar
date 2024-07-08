@@ -5,7 +5,7 @@ import { google } from 'googleapis'
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
 let gUserName = 'Stav'
-let gStartRowIdx = 343
+let gStartRowIdx = 385
 
 
 fs.readFile('credentials.json', (err, content) => {
@@ -84,7 +84,7 @@ async function findAndCreateEvents(auth) {
                     const dateIso = `${year}-${padNum(month)}-${padNum(day)}T`
                     const dateTimeStart = `${dateIso}${padNum(startHour)}:30:00`
                     const dateTimeEnd = `${dateIso}${padNum(startHour + 5)}:30:00`
-                    const summary = `${courseName} - ${lessonName}`
+                    const summary = `${gUserName} Lesson - ${courseName} - ${lessonName}`
                     createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd)
                 }
             })
