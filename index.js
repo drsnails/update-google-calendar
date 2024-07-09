@@ -55,6 +55,25 @@ async function findAndCreateEvents(auth) {
     const calendar = google.calendar({ version: 'v3', auth })
     gUserName = capitalize(gUserName)
     try {
+        const START_SEARCH_IDX = 300
+        const sheetName = 'Schedule-2024-New'
+        const initialRange = `${sheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`  // Adjust range as needed
+        const initialRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: gSheetId,
+            range: initialRange,
+        })
+
+        const tempRows = initialRes.data.values
+        for (let i = 0; i < tempRows.length; i++) {
+            if (tempRows[i][0]) {
+                const { day, month, year } = getDateData(tempRows[i][0])
+                const currentDate = new Date().toLocaleDateString('he')
+                const checkDate = new Date(year, month - 1, day).toLocaleDateString('he')
+                if (checkDate === currentDate) {
+                    gStartRowIdx = START_SEARCH_IDX + i 
+                }
+            }
+        }
         const ranges = [`Schedule-2024-New!A1:Z1`, `Schedule-2024-New!A${gStartRowIdx}:Z`]
         const res = await sheets.spreadsheets.values.batchGet({
             spreadsheetId: gSheetId,
