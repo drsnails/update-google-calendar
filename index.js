@@ -5,7 +5,7 @@ import { google } from 'googleapis'
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
 let gUserName = 'Stav'
-let gStartRowIdx = 385
+let gStartRowIdx = 382
 
 
 fs.readFile('credentials.json', (err, content) => {
@@ -68,7 +68,7 @@ async function findAndCreateEvents(auth) {
             return
         }
 
-        rows.forEach((row, rowIdx) => {
+        rows.forEach((row) => {
             row.forEach((cell, colIdx) => {
                 if (cell.includes(gUserName) && row[0]) {
                     const courseName = courseNames[colIdx - 1]
@@ -97,6 +97,7 @@ async function findAndCreateEvents(auth) {
 }
 
 function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
+    const calendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com'
     const event = {
         summary,
         start: {
@@ -112,7 +113,7 @@ function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
     calendar.events.insert(
         {
             auth: calendar.auth,
-            calendarId: 'primary',
+            calendarId: calendarId,
             resource: event,
         },
         (err, event) => {
@@ -124,7 +125,6 @@ function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
         }
     )
 }
-
 
 function padNum(num) {
     return (num + '').padStart(2, '0')
