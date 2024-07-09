@@ -57,7 +57,7 @@ async function findAndCreateEvents(auth) {
     try {
         const START_SEARCH_IDX = 300
         const sheetName = 'Schedule-2024-New'
-        const initialRange = `${sheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`  // Adjust range as needed
+        const initialRange = `${sheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`  
         const initialRes = await sheets.spreadsheets.values.get({
             spreadsheetId: gSheetId,
             range: initialRange,
