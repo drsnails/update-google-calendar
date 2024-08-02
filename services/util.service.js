@@ -129,6 +129,10 @@ export function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
+export function simpleFormatTime(time) {
+    return new Date(time).toLocaleString('he')
+}
+
 
 export function getDynamicAsyncQueue(handleResult, handleError = handleResult) {
     const queue = []

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import readline from 'readline'
 import { google } from 'googleapis'
-import { log, padNum, getDateData, capitalize, getDynamicAsyncQueue } from './services/util.service.js'
+import { log, padNum, getDateData, capitalize, getDynamicAsyncQueue, simpleFormatTime } from './services/util.service.js'
 
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
@@ -153,7 +153,7 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
 
         const events = response.data.items;
         if (events && events.length > 0) {
-            const formattedEvent = { summary, startTime: new Date(dateTimeStart).toLocaleString('he') }
+            const formattedEvent = { summary, startTime: simpleFormatTime(dateTimeStart) }
             return { isExist: true, event: formattedEvent };
         }
 
@@ -176,8 +176,8 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
         });
         const formattedEvent = {
             summary: event.summary,
-            start: new Date(event.start.dateTime).toLocaleString('he'),
-            end: new Date(event.end.dateTime).toLocaleString('he'),
+            start: simpleFormatTime(event.start.dateTime),
+            end: simpleFormatTime(event.end.dateTime),
         }
         return { isExist: false, event: formattedEvent };
     } catch (err) {
@@ -187,3 +187,5 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
         }
     }
 }
+
+
