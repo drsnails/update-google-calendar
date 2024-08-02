@@ -6,6 +6,7 @@ import { log, padNum, getDateData, capitalize, getDynamicAsyncQueue } from './se
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
 const gSheetName = 'Schedule-2024-New'
+const gCalendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com';
 let gUserName = 'Stav'
 let gStartRowIdx = null
 
@@ -134,7 +135,6 @@ async function findAndCreateEvents(auth) {
 }
 
 async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
-    const calendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com';
 
     function formatToRFC3339(date) {
         return date.toISOString();
@@ -144,7 +144,7 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
     try {
         const response = await calendar.events.list({
             auth: calendar.auth,
-            calendarId: calendarId,
+            calendarId: gCalendarId,
             timeMin: formatToRFC3339(new Date(dateTimeStart)),
             timeMax: formatToRFC3339(new Date(dateTimeEnd)),
             q: summary,
@@ -171,7 +171,7 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
 
         await calendar.events.insert({
             auth: calendar.auth,
-            calendarId: calendarId,
+            calendarId: gCalendarId,
             resource: event,
         });
         const formattedEvent = {
