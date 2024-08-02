@@ -1,7 +1,7 @@
 import fs from 'fs'
 import readline from 'readline'
 import { google } from 'googleapis'
-import { log, padNum, getDateData, capitalize } from './services/util.service.js'
+import { log, padNum, getDateData, capitalize, getDynamicAsyncQueue } from './services/util.service.js'
 
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
@@ -93,7 +93,15 @@ async function findAndCreateEvents(auth) {
             console.log('No data found.')
             return
         }
-
+        const queue = getDynamicAsyncQueue((eventData) => {
+            if (eventData.isExist) {
+                log.bold.underline.red(`Event already exist:`)
+                console.log(eventData.event)
+            } else {
+                log.bold.underline.green(`Event created:`)
+                console.log(eventData.event)
+            }
+        })
         rows.forEach((row) => {
             row.forEach((cell, colIdx) => {
                 if (cell.includes(gUserName) && row[0]) {
@@ -111,7 +119,7 @@ async function findAndCreateEvents(auth) {
                     const dateTimeStart = `${dateIso}${padNum(startHour)}:30:00`
                     const dateTimeEnd = `${dateIso}${padNum(startHour + 5)}:30:00`
                     const summary = `${gUserName} Lesson - ${courseName} - ${lessonName}`
-                    createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd)
+                    queue(async () => createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd))
                 }
             })
         })
@@ -136,15 +144,16 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
             calendarId: calendarId,
             timeMin: formatToRFC3339(new Date(dateTimeStart)),
             timeMax: formatToRFC3339(new Date(dateTimeEnd)),
-            q: summary, // Search for events with the same summary
+            q: summary,
             singleEvents: true,
         });
 
         const events = response.data.items;
         if (events && events.length > 0) {
-            log.bold.underline.red('\nEvent already exist:')
-            console.log({ summary, startTime: new Date(dateTimeStart).toLocaleString('he') }, '\n')
-            return;
+            // log.bold.underline.red('\nEvent already exist:')
+            // console.log({ summary, startTime: new Date(dateTimeStart).toLocaleString('he') }, '\n')
+            const formattedEvent = { summary, startTime: new Date(dateTimeStart).toLocaleString('he') }
+            return { isExist: true, event: formattedEvent };
         }
 
         const event = {
@@ -169,8 +178,9 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
             start: new Date(event.start.dateTime).toLocaleString('he'),
             end: new Date(event.end.dateTime).toLocaleString('he'),
         }
-        log.bold.underline.green('\nEvent created:')
-        console.log(formattedEvent);
+        // log.bold.underline.green('\nEvent created:')
+        // console.log(formattedEvent);
+        return { isExist: false, event: formattedEvent };
     } catch (err) {
         console.error('Error while interacting with Google Calendar:', err);
         if (err.response) {

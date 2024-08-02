@@ -128,3 +128,29 @@ export function getDateData(dateStr) {
 export function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
+
+export function getDynamicAsyncQueue(handleResult, handleError = handleResult) {
+    const queue = []
+    let isRunning = false
+
+    async function run() {
+        if (isRunning) return
+        isRunning = true
+        while (queue.length) {
+            const task = queue.shift()
+            try {
+                const res = await task()
+                handleResult?.(res)
+            } catch (err) {
+                handleError?.(err)
+            }
+        }
+        isRunning = false
+    }
+
+    return (task) => {
+        queue.push(task)
+        run()
+    }
+}
