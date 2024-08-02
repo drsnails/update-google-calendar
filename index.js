@@ -125,12 +125,11 @@ async function findAndCreateEvents(auth) {
 async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
     const calendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com';
 
-    // Function to format date to RFC3339 format
     function formatToRFC3339(date) {
         return date.toISOString();
     }
 
-    // Check for existing events
+    //* Check if the event already exists
     try {
         const response = await calendar.events.list({
             auth: calendar.auth,
@@ -148,7 +147,6 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
             return;
         }
 
-        // If no matching event found, create a new one
         const event = {
             summary,
             start: {
@@ -161,12 +159,11 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
             },
         };
 
-        const createdEvent = await calendar.events.insert({
+        await calendar.events.insert({
             auth: calendar.auth,
             calendarId: calendarId,
             resource: event,
         });
-        // console.log('Event created:', createdEvent.data.htmlLink);
         const formattedEvent = {
             summary: event.summary,
             start: new Date(event.start.dateTime).toLocaleString('he'),
