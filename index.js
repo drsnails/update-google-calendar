@@ -1,6 +1,7 @@
 import fs from 'fs'
 import readline from 'readline'
 import { google } from 'googleapis'
+import { log, padNum, getDateData, capitalize } from './services/util.service.js'
 
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
@@ -54,7 +55,7 @@ function getNewToken(oAuth2Client, callback) {
 async function findAndCreateEvents(auth) {
     const sheets = google.sheets({ version: 'v4', auth })
     const calendar = google.calendar({ version: 'v3', auth })
-    
+
     gUserName = capitalize(gUserName)
     try {
 
@@ -121,45 +122,62 @@ async function findAndCreateEvents(auth) {
     }
 }
 
-function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
-    const calendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com'
-    const event = {
-        summary,
-        start: {
-            dateTime: dateTimeStart,
-            timeZone: 'Asia/Jerusalem',
-        },
-        end: {
-            dateTime: dateTimeEnd,
-            timeZone: 'Asia/Jerusalem',
-        },
+async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd) {
+    const calendarId = '545b72c6627673cd3a377213824ba2029b1793325beb6b9b092bf0736101a8eb@group.calendar.google.com';
+
+    // Function to format date to RFC3339 format
+    function formatToRFC3339(date) {
+        return date.toISOString();
     }
 
-    calendar.events.insert(
-        {
+    // Check for existing events
+    try {
+        const response = await calendar.events.list({
+            auth: calendar.auth,
+            calendarId: calendarId,
+            timeMin: formatToRFC3339(new Date(dateTimeStart)),
+            timeMax: formatToRFC3339(new Date(dateTimeEnd)),
+            q: summary, // Search for events with the same summary
+            singleEvents: true,
+        });
+
+        const events = response.data.items;
+        if (events && events.length > 0) {
+            log.bold.underline.red('\nEvent already exist:')
+            console.log({ summary, startTime: new Date(dateTimeStart).toLocaleString('he') }, '\n')
+            return;
+        }
+
+        // If no matching event found, create a new one
+        const event = {
+            summary,
+            start: {
+                dateTime: dateTimeStart,
+                timeZone: 'Asia/Jerusalem',
+            },
+            end: {
+                dateTime: dateTimeEnd,
+                timeZone: 'Asia/Jerusalem',
+            },
+        };
+
+        const createdEvent = await calendar.events.insert({
             auth: calendar.auth,
             calendarId: calendarId,
             resource: event,
-        },
-        (err, event) => {
-            if (err) {
-                console.log('Error while contacting google calendar:', err)
-                return
-            }
-            console.log('Event created:', event.data.htmlLink)
+        });
+        // console.log('Event created:', createdEvent.data.htmlLink);
+        const formattedEvent = {
+            summary: event.summary,
+            start: new Date(event.start.dateTime).toLocaleString('he'),
+            end: new Date(event.end.dateTime).toLocaleString('he'),
         }
-    )
-}
-
-function padNum(num) {
-    return (num + '').padStart(2, '0')
-}
-
-function getDateData(dateStr) {
-    const [day, month, year] = dateStr.split('.')
-    return { day, month, year }
-}
-
-function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        log.bold.underline.green('\nEvent created:')
+        console.log(formattedEvent);
+    } catch (err) {
+        console.error('Error while interacting with Google Calendar:', err);
+        if (err.response) {
+            console.error('Response data:', err.response.data);
+        }
+    }
 }
