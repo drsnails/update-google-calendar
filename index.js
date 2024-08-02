@@ -93,7 +93,9 @@ async function findAndCreateEvents(auth) {
             console.log('No data found.')
             return
         }
-        const queue = getDynamicAsyncQueue((eventData) => {
+
+        const queueEvents = getDynamicAsyncQueue((eventData) => {
+            console.log('\n')
             if (eventData.isExist) {
                 log.bold.underline.red(`Event already exist:`)
                 console.log(eventData.event)
@@ -102,6 +104,7 @@ async function findAndCreateEvents(auth) {
                 console.log(eventData.event)
             }
         })
+
         rows.forEach((row) => {
             row.forEach((cell, colIdx) => {
                 if (cell.includes(gUserName) && row[0]) {
@@ -119,7 +122,7 @@ async function findAndCreateEvents(auth) {
                     const dateTimeStart = `${dateIso}${padNum(startHour)}:30:00`
                     const dateTimeEnd = `${dateIso}${padNum(startHour + 5)}:30:00`
                     const summary = `${gUserName} Lesson - ${courseName} - ${lessonName}`
-                    queue(async () => createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd))
+                    queueEvents(async () => createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd))
                 }
             })
         })
@@ -150,8 +153,6 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
 
         const events = response.data.items;
         if (events && events.length > 0) {
-            // log.bold.underline.red('\nEvent already exist:')
-            // console.log({ summary, startTime: new Date(dateTimeStart).toLocaleString('he') }, '\n')
             const formattedEvent = { summary, startTime: new Date(dateTimeStart).toLocaleString('he') }
             return { isExist: true, event: formattedEvent };
         }
@@ -178,8 +179,6 @@ async function createCalendarEvent(calendar, summary, dateTimeStart, dateTimeEnd
             start: new Date(event.start.dateTime).toLocaleString('he'),
             end: new Date(event.end.dateTime).toLocaleString('he'),
         }
-        // log.bold.underline.green('\nEvent created:')
-        // console.log(formattedEvent);
         return { isExist: false, event: formattedEvent };
     } catch (err) {
         console.error('Error while interacting with Google Calendar:', err);
