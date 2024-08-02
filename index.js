@@ -4,8 +4,9 @@ import { google } from 'googleapis'
 
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
+const gSheetName = 'Schedule-2024-New'
 let gUserName = 'Stav'
-let gStartRowIdx = 382
+let gStartRowIdx = null
 
 
 fs.readFile('credentials.json', (err, content) => {
@@ -53,28 +54,33 @@ function getNewToken(oAuth2Client, callback) {
 async function findAndCreateEvents(auth) {
     const sheets = google.sheets({ version: 'v4', auth })
     const calendar = google.calendar({ version: 'v3', auth })
+    
     gUserName = capitalize(gUserName)
     try {
-        const START_SEARCH_IDX = 300
-        const sheetName = 'Schedule-2024-New'
-        const initialRange = `${sheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`  
-        const initialRes = await sheets.spreadsheets.values.get({
-            spreadsheetId: gSheetId,
-            range: initialRange,
-        })
 
-        const tempRows = initialRes.data.values
-        for (let i = 0; i < tempRows.length; i++) {
-            if (tempRows[i][0]) {
-                const { day, month, year } = getDateData(tempRows[i][0])
-                const currentDate = new Date().toLocaleDateString('he')
-                const checkDate = new Date(year, month - 1, day).toLocaleDateString('he')
-                if (checkDate === currentDate) {
-                    gStartRowIdx = START_SEARCH_IDX + i 
+        if (!gStartRowIdx) {
+            const START_SEARCH_IDX = 300
+            const initialRange = `${gSheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`
+            const initialRes = await sheets.spreadsheets.values.get({
+                spreadsheetId: gSheetId,
+                range: initialRange,
+            })
+
+            const tempRows = initialRes.data.values
+            for (let i = 0; i < tempRows.length; i++) {
+                if (tempRows[i][0]) {
+                    const { day, month, year } = getDateData(tempRows[i][0])
+                    const currentDate = new Date().toLocaleDateString('he')
+                    const checkDate = new Date(year, month - 1, day).toLocaleDateString('he')
+                    if (checkDate === currentDate) {
+                        gStartRowIdx = START_SEARCH_IDX + i
+                        break
+                    }
                 }
             }
+            if (!gStartRowIdx) throw new Error(`Couldn't find current date. Provide an initial row start idx or check the google sheet for changes`)
         }
-        const ranges = [`Schedule-2024-New!A1:Z1`, `Schedule-2024-New!A${gStartRowIdx}:Z`]
+        const ranges = [`${gSheetName}!A1:Z1`, `${gSheetName}!A${gStartRowIdx}:Z`]
         const res = await sheets.spreadsheets.values.batchGet({
             spreadsheetId: gSheetId,
             ranges: ranges,
