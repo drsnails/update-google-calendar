@@ -82,7 +82,7 @@ async function findAndCreateEvents(auth) {
             }
             if (!gStartRowIdx) throw new Error(`Couldn't find current date. Provide an initial row start idx or check the google sheet for changes`)
         }
-        const ranges = [`${gSheetName}!A1:Z1`, `${gSheetName}!A${gStartRowIdx}:Z`]
+        const ranges = [`${gSheetName}!A1:1`, `${gSheetName}!A${gStartRowIdx}:ZZ`]
         const res = await sheets.spreadsheets.values.batchGet({
             spreadsheetId: gSheetId,
             ranges: ranges,
@@ -107,8 +107,9 @@ async function findAndCreateEvents(auth) {
         })
 
         rows.forEach((row) => {
+            
             row.forEach((cell, colIdx) => {
-                if (cell.includes(gUserName) && row[0]) {
+                if (cell.trim().includes(gUserName) && row[0]) {
                     const courseName = courseNames[colIdx - 1]
                     const lessonName = row[colIdx - 1]
                     const date = row[0]
