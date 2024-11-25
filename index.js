@@ -113,7 +113,7 @@ async function findAndCreateEvents(auth) {
                     const courseName = courseNames[colIdx - 1]
                     const lessonName = row[colIdx - 1]
                     const date = row[0]
-                    const eveningKeyWords = ['evening', 'preground', 'introduction']
+                    const eveningKeyWords = ['evening', 'preground', 'introduction', 'ערב']
                     const eveKeyWordsRegex = new RegExp(eveningKeyWords.join('|'), 'i')
                     let startHour = 8
                     if (eveKeyWordsRegex.test(courseName)) {
