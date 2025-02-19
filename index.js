@@ -21,9 +21,37 @@ function authorize(credentials, callback) {
     const { client_secret, client_id, redirect_uris } = credentials.installed
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
 
-    fs.readFile('token.json', (err, token) => {
+    fs.readFile('token.json', async (err, token) => {
         if (err) return getNewToken(oAuth2Client, callback)
-        oAuth2Client.setCredentials(JSON.parse(token))
+        
+        const tokenData = JSON.parse(token)
+        // Set credentials first
+        oAuth2Client.setCredentials(tokenData)
+
+        // Check if token will expire soon (within 5 minutes)
+        const expiryDate = new Date(tokenData.expiry_date)
+        const now = new Date()
+        const timeToRefresh = 30 * 60 * 1000
+
+        if (expiryDate.getTime() - now.getTime() < timeToRefresh) {
+            try {
+                // Refresh the token
+                const { credentials } = await oAuth2Client.refreshToken(tokenData.refresh_token)
+                
+                // Save the new token
+                fs.writeFile('token.json', JSON.stringify(credentials), (err) => {
+                    if (err) console.error('Error saving refreshed token:', err)
+                    else console.log('Token refreshed and saved')
+                })
+                
+                // Update the credentials
+                oAuth2Client.setCredentials(credentials)
+            } catch (error) {
+                console.error('Error refreshing token:', error)
+                return getNewToken(oAuth2Client, callback)
+            }
+        }
+
         callback(oAuth2Client)
     })
 }
@@ -33,6 +61,7 @@ function getNewToken(oAuth2Client, callback) {
     const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/calendar'],
+        prompt: 'consent'  // This forces a refresh token to be generated
     })
     console.log('Authorize this app by visiting this url:', authUrl)
     const rl = readline.createInterface({
@@ -61,7 +90,7 @@ async function findAndCreateEvents(auth) {
     try {
 
         if (!gStartRowIdx) {
-            const START_SEARCH_IDX = 450
+            const START_SEARCH_IDX = 550
             const initialRange = `${gSheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`
             const initialRes = await sheets.spreadsheets.values.get({
                 spreadsheetId: gSheetId,
