@@ -1,7 +1,9 @@
 import fs from 'fs'
 import readline from 'readline'
+import open from 'open'
 import { google } from 'googleapis'
 import { log, padNum, getDateData, capitalize, getDynamicAsyncQueue, simpleFormatTime } from './services/util.service.js'
+import { exec } from 'child_process'
 
 // const gSheetId = '1e0w9MvC7xRmh1flTTfDwqhbZI86QEt7KM-zNgLgpm9I' // * Copy
 const gSheetId = '1rc2pIfaDp9JTkCnG-oxXyBvOzw6Dub0dKQ5j6fEz5ac' // * Main
@@ -13,17 +15,19 @@ let gStartRowIdx = null
 
 fs.readFile('credentials.json', (err, content) => {
     if (err) return console.log('Error loading client secret file:', err)
-    authorize(JSON.parse(content), findAndCreateEvents)
+    const credentials = JSON.parse(content)
+    const PORT = credentials.installed.port || 3030
+    authorize(credentials, findAndCreateEvents, PORT)
 })
 
 
-function authorize(credentials, callback) {
+function authorize(credentials, callback, PORT) {
     const { client_secret, client_id, redirect_uris } = credentials.installed
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
 
     fs.readFile('token.json', async (err, token) => {
-        if (err) return getNewToken(oAuth2Client, callback)
-        
+        if (err) return getNewToken(oAuth2Client, callback, PORT)
+
         const tokenData = JSON.parse(token)
         // Set credentials first
         oAuth2Client.setCredentials(tokenData)
@@ -37,13 +41,13 @@ function authorize(credentials, callback) {
             try {
                 // Refresh the token
                 const { credentials } = await oAuth2Client.refreshToken(tokenData.refresh_token)
-                
+
                 // Save the new token
                 fs.writeFile('token.json', JSON.stringify(credentials), (err) => {
                     if (err) console.error('Error saving refreshed token:', err)
                     else console.log('Token refreshed and saved')
                 })
-                
+
                 // Update the credentials
                 oAuth2Client.setCredentials(credentials)
             } catch (error) {
@@ -57,19 +61,44 @@ function authorize(credentials, callback) {
 }
 
 
-function getNewToken(oAuth2Client, callback) {
+function getNewToken(oAuth2Client, callback, PORT) {
     const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/calendar'],
         prompt: 'consent'  // This forces a refresh token to be generated
     })
     console.log('Authorize this app by visiting this url:', authUrl)
+
+    exec('node server.js', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing command: ${error.message}`);
+            return;
+        }
+
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+
+        console.log(`stdout: ${stdout}`);
+    });
+    open(authUrl)
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
     })
     rl.question('Enter the code from that page here: ', (code) => {
         rl.close()
+
+        //* Killing local server process
+        exec(`lsof -i :${PORT} | grep LISTEN | awk '{print $2}' | xargs kill -9`, (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error killing process on port ${PORT}:`, err);
+                return;
+            }
+            console.log(`Successfully killed process on port ${PORT}`);
+        });
         oAuth2Client.getToken(code, (err, token) => {
             if (err) return console.error('Error retrieving access token', err)
             oAuth2Client.setCredentials(token)
@@ -136,7 +165,7 @@ async function findAndCreateEvents(auth) {
         })
 
         rows.forEach((row) => {
-            
+
             row.forEach((cell, colIdx) => {
                 if (cell.trim().includes(gUserName) && row[0]) {
                     const courseName = courseNames[colIdx - 1]

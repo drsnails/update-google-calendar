@@ -12,6 +12,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "google-auth-library": "^9.10.0",
-    "googleapis": "^137.1.0"
+    "googleapis": "^137.1.0",
+    "open": "^10.1.0"
   }
 }
