@@ -61,7 +61,7 @@ function authorize(credentials, callback, PORT) {
 }
 
 
-function getNewToken(oAuth2Client, callback, PORT) {
+function getNewToken(oAuth2Client, callback, PORT = 3030) {
     const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/calendar'],
@@ -69,7 +69,7 @@ function getNewToken(oAuth2Client, callback, PORT) {
     })
     console.log('Authorize this app by visiting this url:', authUrl)
 
-    exec('node server.js', (error, stdout, stderr) => {
+    const serverChildProcess = exec('node server.js', (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing command: ${error.message}`);
             return;
@@ -92,13 +92,8 @@ function getNewToken(oAuth2Client, callback, PORT) {
         rl.close()
 
         //* Killing local server process
-        exec(`lsof -i :${PORT} | grep LISTEN | awk '{print $2}' | xargs kill -9`, (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Error killing process on port ${PORT}:`, err);
-                return;
-            }
-            console.log(`Successfully killed process on port ${PORT}`);
-        });
+        serverChildProcess.kill()
+        
         oAuth2Client.getToken(code, (err, token) => {
             if (err) return console.error('Error retrieving access token', err)
             oAuth2Client.setCredentials(token)
