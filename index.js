@@ -29,26 +29,26 @@ function authorize(credentials, callback, PORT) {
         if (err) return getNewToken(oAuth2Client, callback, PORT)
 
         const tokenData = JSON.parse(token)
-        // Set credentials first
+        //* Set credentials first
         oAuth2Client.setCredentials(tokenData)
 
-        // Check if token will expire soon (within 5 minutes)
+        //* Check if token will expire soon (within 5 minutes)
         const expiryDate = new Date(tokenData.expiry_date)
         const now = new Date()
         const timeToRefresh = 30 * 60 * 1000
 
         if (expiryDate.getTime() - now.getTime() < timeToRefresh) {
             try {
-                // Refresh the token
+                //* Refresh the token
                 const { credentials } = await oAuth2Client.refreshToken(tokenData.refresh_token)
 
-                // Save the new token
+                //* Save the new token
                 fs.writeFile('token.json', JSON.stringify(credentials), (err) => {
                     if (err) console.error('Error saving refreshed token:', err)
                     else console.log('Token refreshed and saved')
                 })
 
-                // Update the credentials
+                //* Update the credentials
                 oAuth2Client.setCredentials(credentials)
             } catch (error) {
                 console.error('Error refreshing token:', error)
@@ -65,10 +65,12 @@ function getNewToken(oAuth2Client, callback, PORT = 3030) {
     const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/calendar'],
-        prompt: 'consent'  // This forces a refresh token to be generated
+        prompt: 'consent'  //* This forces a refresh token to be generated
     })
     console.log('Authorize this app by visiting this url:', authUrl)
 
+
+    //* starting server.js which serve a page that will get the code from query params
     const serverChildProcess = exec('node server.js', (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing command: ${error.message}`);
@@ -82,6 +84,8 @@ function getNewToken(oAuth2Client, callback, PORT = 3030) {
 
         console.log(`stdout: ${stdout}`);
     });
+
+    //* Open in default browser
     open(authUrl)
 
     const rl = readline.createInterface({
