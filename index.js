@@ -85,7 +85,7 @@ function getNewToken(oAuth2Client, callback, PORT = 3030) {
         console.log(`stdout: ${stdout}`);
     });
 
-    //* Open in default browser
+    //* Open in browser
     open(authUrl)
 
     const rl = readline.createInterface({
@@ -118,7 +118,7 @@ async function findAndCreateEvents(auth) {
     try {
 
         if (!gStartRowIdx) {
-            const START_SEARCH_IDX = 600
+            const START_SEARCH_IDX = 700
             const initialRange = `${gSheetName}!A${START_SEARCH_IDX}:A${START_SEARCH_IDX + 500}`
             const initialRes = await sheets.spreadsheets.values.get({
                 spreadsheetId: gSheetId,
